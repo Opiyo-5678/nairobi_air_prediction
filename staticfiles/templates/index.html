@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality Monitor</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+    <style>
+        #air-quality {
+            display: none; /* Hide the section by default */
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <h1>Air Quality Prediction</h1>
+            <nav>
+                <ul>
+                    {% if user.is_authenticated %}
+    <a href="{% url 'air_quality:air_quality_page' %}" class="cta-button">Check Air Quality Now</a>
+{% else %}
+    <a href="{% url 'authentication:login' %}" class="cta-button">Check Air Quality Now</a>
+{% endif %}
+<li><a href="{% url 'health_provider_page' %}" class ="cta-button">Health Providers</a></li>
+<li><a href="{% url 'air_quality:historical_data' %}" class="cta-button">View Historical Data</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h2>Welcome to Air Quality Prediction</h2>
+            <p>Stay informed about the air quality in your area and take necessary precautions.</p>
+       
+
+        </div>
+    </section>
+
+    <!-- Air Quality Result Section -->
+    <section id="air-quality" class="air-quality-result">
+        <div class="container">
+            <h2>Air Quality Result</h2>
+            <div id="airQualityResult">
+                <!-- Air quality data will be displayed here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>© 2025 Air Quality Prediction. All rights reserved.</p>
+            <ul>
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Service</a></li>
+                <li><a href="#">Contact Us</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        document.getElementById('checkAirQualityBtn').addEventListener('click', async (event) => {
+            event.preventDefault();
+    
+            const lat = -1.286389; // Example Nairobi latitude
+            const lon = 36.817223; // Example Nairobi longitude
+    
+            try {
+                const response = await fetch("{% url 'air_quality:air_quality_page' %}", {  // ✅ Use Django URL
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                    body: JSON.stringify({ lat, lon }),
+                });
+    
+                if (!response.ok) throw new Error("Failed to fetch air quality data");
+    
+                const data = await response.json();
+                document.getElementById("airQualityResult").innerHTML = `
+                    <p><strong>Prediction:</strong> ${data.prediction}</p>
+                    <p><strong>Air Quality Level:</strong> ${data.air_quality_level}</p>
+                    <p><strong>Recommendations:</strong> ${data.recommendations}</p>
+                    <p><strong>Alert:</strong> ${data.alert}</p>
+                `;
+    
+                document.getElementById("air-quality").style.display = "block";
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("airQualityResult").innerText = "Failed to fetch air quality data.";
+            }
+        });
+    </script>
+    
+</body>
+</html>

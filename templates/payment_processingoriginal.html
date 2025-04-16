@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make Payment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .payment-container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .payment-header {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            text-align: center;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+        }
+        .form-control {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+        }
+        .btn-pay {
+            background-color: #007bff;
+            border: none;
+            padding: 12px;
+            font-weight: 500;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .payment-processing {
+            display: none;
+            text-align: center;
+        }
+        .payment-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1.5s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <!-- Payment Form (initially visible) -->
+        <div id="paymentForm">
+            <div class="payment-header">
+                <h2>Complete Payment</h2>
+                <p class="text-muted">Enter your details to receive M-Pesa STK Push</p>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>Service:</strong> {{ payment_for|title }} with {{ provider.name }}<br>
+                <strong>Reference:</strong> HEALTH-{{ request.session.payment_session.reference|default:"XXXXXX" }}
+            </div>
+
+            <form id="mpesaPaymentForm">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="phoneNumber" class="form-label">M-Pesa Phone Number</label>
+                    <input type="tel" class="form-control" id="phoneNumber" 
+                           placeholder="2547XXXXXXXX" pattern="254[0-9]{9}" required>
+                    <div class="form-text">Format: 2547XXXXXXXX (no spaces or dashes)</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount (KES)</label>
+                    <input type="number" class="form-control" id="amount" 
+                           value="{{ amount|default:'1' }}" min="1" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-pay" id="payButton">
+                    Pay via M-Pesa
+                </button>
+            </form>
+        </div>
+
+        <!-- Payment Processing (hidden initially) -->
+        <div class="payment-processing" id="paymentProcessing">
+            <div class="payment-header">
+                <h2>Processing Payment</h2>
+            </div>
+            
+            <div class="payment-spinner"></div>
+            
+            <div class="alert alert-info" id="statusMessage">
+                <p>Sending payment request to your phone...</p>
+                <p id="paymentDetails"></p>
+                <div class="countdown">Checking status in <span id="timer">5</span> seconds</div>
+            </div>
+            
+            <div class="alert alert-danger" id="errorMessage" style="display: none;"></div>
+            
+            <button id="retryButton" class="btn btn-outline-primary mt-2" style="display: none;">
+                Retry Payment
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let checkInterval;
+        let retryCount = 0;
+        const maxRetries = 3;
+        const checkDelay = 5000; // 5 seconds
+
+        // DOM elements
+        const paymentForm = document.getElementById('paymentForm');
+        const paymentProcessing = document.getElementById('paymentProcessing');
+        const payButton = document.getElementById('payButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const retryButton = document.getElementById('retryButton');
+        const timerElement = document.getElementById('timer');
+        const paymentDetails = document.getElementById('paymentDetails');
+        const mpesaForm = document.getElementById('mpesaPaymentForm');
+
+        // Format phone number
+        function formatPhoneNumber(phone) {
+            // Ensure it starts with 254
+            if (phone.startsWith('0')) {
+                return '254' + phone.substring(1);
+            } else if (phone.startsWith('+254')) {
+                return phone.substring(1);
+            }
+            return phone;
+        }
+
+        // Start countdown timer
+        function startCountdown(seconds, callback) {
+            let timeLeft = seconds;
+            timerElement.textContent = timeLeft;
+            
+            const countdownInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    if (callback) callback();
+                }
+            }, 1000);
+        }
+
+        // Initiate payment via AJAX
+        async function initiatePayment(phoneNumber, amount) {
+            try {
+                const response = await fetch('{% url "initiate_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        phone_number: phoneNumber,
+                        amount: amount,
+                        payment_for: '{{ payment_for }}'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data;
+
+            } catch (error) {
+                console.error('Payment initiation error:', error);
+                return { success: false, message: 'Failed to initiate payment' };
+            }
+        }
+
+        // Check payment status
+        async function checkPaymentStatus() {
+            try {
+                const response = await fetch('{% url "check_payment_status" %}', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data;
+
+            } catch (error) {
+                console.error('Status check error:', error);
+                return { success: false, message: 'Failed to check status' };
+            }
+        }
+
+        // Handle payment status response
+        function handleStatusResponse(data) {
+            if (data.success) {
+                // Payment successful
+                clearInterval(checkInterval);
+                statusMessage.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>Payment Successful!</strong>
+                        <p>${data.message}</p>
+                        <p>Redirecting to confirmation page...</p>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 2000);
+                
+            } else if (retryCount < maxRetries) {
+                // Payment pending or failed (retry)
+                retryCount++;
+                statusMessage.innerHTML = `
+                    <p>${data.message || 'Processing payment...'}</p>
+                    <p>Attempt ${retryCount} of ${maxRetries}</p>
+                    <div class="countdown">Next check in <span id="timer">${checkDelay/1000}</span> seconds</div>
+                `;
+                startCountdown(checkDelay/1000, checkPaymentStatusLoop);
+                
+            } else {
+                // Final failure
+                clearInterval(checkInterval);
+                document.querySelector('.payment-spinner').style.display = 'none';
+                retryButton.style.display = 'block';
+                
+                errorMessage.style.display = 'block';
+                errorMessage.innerHTML = `
+                    <strong>Payment Failed</strong>
+                    <p>${data.message || 'Unable to complete payment'}</p>
+                `;
+            }
+        }
+
+        // Payment status check loop
+        function checkPaymentStatusLoop() {
+            checkPaymentStatus()
+                .then(handleStatusResponse)
+                .catch(error => {
+                    console.error('Status check failed:', error);
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        startCountdown(checkDelay/1000, checkPaymentStatusLoop);
+                    } else {
+                        errorMessage.style.display = 'block';
+                        errorMessage.textContent = 'Connection error. Please try again later.';
+                        retryButton.style.display = 'block';
+                    }
+                });
+        }
+
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Form submission handler
+        mpesaForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const phoneNumber = formatPhoneNumber(document.getElementById('phoneNumber').value);
+            const amount = document.getElementById('amount').value;
+            
+            // Validate phone number
+            if (!phoneNumber.match(/^254[0-9]{9}$/)) {
+                alert('Please enter a valid M-Pesa number in format 2547XXXXXXXX');
+                return;
+            }
+            
+            // Validate amount
+            if (amount < 1) {
+                alert('Amount must be at least KES 1');
+                return;
+            }
+            
+            // Show processing UI
+            paymentForm.style.display = 'none';
+            paymentProcessing.style.display = 'block';
+            paymentDetails.innerHTML = `
+                <strong>Amount:</strong> KES ${amount}<br>
+                <strong>Phone:</strong> ${phoneNumber}
+            `;
+            
+            // Disable pay button
+            payButton.disabled = true;
+            payButton.textContent = 'Processing...';
+            
+            // Initiate payment
+            const paymentResponse = await initiatePayment(phoneNumber, amount);
+            
+            if (paymentResponse.success) {
+                // Start checking payment status
+                startCountdown(5, checkPaymentStatusLoop);
+                checkInterval = setInterval(checkPaymentStatusLoop, checkDelay);
+            } else {
+                // Show error and allow retry
+                paymentProcessing.style.display = 'none';
+                paymentForm.style.display = 'block';
+                payButton.disabled = false;
+                payButton.textContent = 'Pay via M-Pesa';
+                
+                alert(paymentResponse.message || 'Failed to initiate payment');
+            }
+        });
+
+        // Retry payment
+        retryButton.addEventListener('click', function() {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Request Consultation with Dr. {{ provider.name }}</h3>
+                </div>
+                
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        {% if not user.is_authenticated %}
+                        <div class="form-group">
+                            <label for="client_name">Full Name</label>
+                            <input type="text" class="form-control" id="client_name" name="client_name" 
+                                   value="{{ request.POST.client_name }}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="client_email">Email Address</label>
+                            <input type="email" class="form-control" id="client_email" name="client_email"
+                                   value="{{ request.POST.client_email }}" required>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-group">
+                            <label for="issue">Health Concern</label>
+                            <textarea class="form-control" id="issue" name="issue" rows="5" required>{{ request.POST.issue }}</textarea>
+                            <small class="form-text text-muted">Please describe your symptoms or concerns in detail</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'health_provider_page' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-info-circle"></i> Consultation fee: KSh 500
+                        (Payable after request submission)
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

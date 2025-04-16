@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Donation Receipt{% endblock %}
+
+{% block extra_css %}
+<style>
+    .receipt-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .receipt-header {
+        border-bottom: 2px solid #2c786c;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+    .receipt-body {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+    }
+    .receipt-table th {
+        width: 40%;
+    }
+    .receipt-footer {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+    @media print {
+        .no-print {
+            display: none;
+        }
+        body {
+            background: white !important;
+        }
+        .receipt-body {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="receipt-container my-5 px-3">
+    <div class="receipt-header text-center">
+        <h2><i class="fas fa-receipt text-primary me-2"></i>Donation Receipt</h2>
+        <p class="lead">Thank you for supporting clean air initiatives</p>
+    </div>
+    
+    <div class="receipt-body mb-4">
+        <div class="row mb-4">
+            <div class="col-12 text-center mb-4">
+                <h4 class="text-primary">Official Receipt</h4>
+                <p class="mb-0">Receipt No: <strong>{{ donation.id }}</strong></p>
+            </div>
+            
+            <div class="col-md-6">
+                <h5>Transaction Details</h5>
+                <table class="table table-borderless receipt-table">
+                    <tr>
+                        <th>Date:</th>
+                        <td>{{ donation.date|date:"F j, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Time:</th>
+                        <td>{{ donation.date|time:"H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Amount:</th>
+                        <td><strong>KES {{ donation.amount }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            <span class="badge 
+                                {% if donation.status == 'confirmed' %}bg-success
+                                {% elif donation.status == 'pending' %}bg-warning text-dark
+                                {% else %}bg-danger{% endif %}">
+                                {{ donation.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h5>Payment Information</h5>
+                <table class="table table-borderless receipt-table">
+                    <tr>
+                        <th>Payment Method:</th>
+                        <td>M-Pesa</td>
+                    </tr>
+                    <tr>
+                        <th>Phone Number:</th>
+                        <td>{{ donation.phone_number }}</td>
+                    </tr>
+                    <tr>
+                        <th>M-Pesa Receipt:</th>
+                        <td>{{ donation.mpesa_receipt|default:"Pending" }}</td>
+                    </tr>
+                    {% if donation.confirmation_date %}
+                    <tr>
+                        <th>Confirmed on:</th>
+                        <td>{{ donation.confirmation_date|date:"F j, Y H:i" }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        
+        <div class="receipt-footer text-center">
+            <p><strong>Thank you for your donation!</strong></p>
+            <p class="text-muted small">Your contribution helps us improve air quality monitoring and awareness.</p>
+        </div>
+    </div>
+    
+    <div class="text-center no-print">
+        <button onclick="window.print()" class="btn btn-primary me-2">
+            <i class="fas fa-print me-2"></i>Print Receipt
+        </button>
+        <a href="{% url 'advocates:download_receipt' donation.id %}" class="btn btn-success me-2">
+            <i class="fas fa-download me-2"></i>Download PDF
+        </a>
+        <a href="{% url 'advocates:donation_history' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to History
+        </a>
+    </div>
+</div>
+{% endblock %}

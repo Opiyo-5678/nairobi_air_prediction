@@ -1,0 +1,68 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Provider Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">  <!-- Link to your CSS file if you have one -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Health Provider Dashboard</h1>
+        <h2>Pending Consultation Requests</h2>
+        <ul>
+            {% for request in consultation_requests %}
+                <li>
+                    <strong>From:</strong> {{ request.user.username }}<br>
+                    <strong>Message:</strong> {{ request.issue }}<br>  <!-- Assuming 'issue' is the field for the message -->
+                    <strong>Status:</strong> {{ request.status }}<br>
+                    <strong>Requested on:</strong> {{ consultation.created_at|date:"D, d M Y H:i" }}<br>
+                    <a href="{% url 'respond_to_request' request.id %}">Respond</a>
+                </li>
+            {% empty %}
+                <li>No pending consultation requests.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

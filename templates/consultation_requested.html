@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Consultation Request Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #eee;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Consultation Request Confirmation</h2>
+    </div>
+    <div class="content">
+        <p>Hello {{ user.first_name|default:user.username }},</p>
+        
+        <p>Your consultation request with <strong>{{ provider.name }}</strong> has been received successfully.</p>
+        
+        <h3>Consultation Details:</h3>
+        <ul>
+            <li><strong>Request ID:</strong> #{{ consultation.id }}</li>
+            <li><strong>Health Provider:</strong> {{ provider.name }} ({{ provider.specialization }})</li>
+            <li><strong>Requested on:</strong> {{ consultation.created_at|date:"F j, Y, g:i a" }}</li>
+            <li><strong>Status:</strong> {{ consultation.status }}</li>
+        </ul>
+        
+        <p>The health provider will review your request and contact you soon.</p>
+        
+        <p>Thank you for using our service!</p>
+    </div>
+    <div class="footer">
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</body>
+</html>

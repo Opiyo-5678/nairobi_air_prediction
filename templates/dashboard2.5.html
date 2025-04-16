@@ -1,0 +1,459 @@
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Air Quality Dashboard</h1>
+    
+    <!-- Control Panel -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-sliders-h me-1"></i>
+            Dashboard Controls
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Station</label>
+                    <select id="stationSelect" class="form-select">
+                        <option value="all">All Stations</option>
+                        {% for station in stations %}
+                        <option value="{{ station.id }}">{{ station.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Time Range</label>
+                    <select id="timeRange" class="form-select">
+                        <option value="1">Last 24 Hours</option>
+                        <option value="3">Last 3 Days</option>
+                        <option value="7" selected>Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Pollutant</label>
+                    <select id="pollutantSelect" class="form-select">
+                        <option value="pm25" selected>PM2.5</option>
+                        <option value="pm10">PM10</option>
+                        <option value="no2">NO₂</option>
+                        <option value="o3">O₃</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button id="refreshBtn" class="btn btn-success w-100">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Chart -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <i class="fas fa-chart-line me-1"></i>
+            Air Quality Trends (PM2.5)
+        </div>
+        <div class="card-body">
+            <canvas id="mainChart" height="300"></canvas>
+        </div>
+    </div>
+    
+    <!-- Pollutant Comparison -->
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Average Pollutant Levels
+                </div>
+                <div class="card-body">
+                    <canvas id="pollutantChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-chart-pie me-1"></i>
+                    AQI Categories
+                </div>
+                <div class="card-body">
+                    <canvas id="aqiPieChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Current Conditions -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <i class="fas fa-info-circle me-1"></i>
+            Current Conditions
+        </div>
+        <div class="card-body" id="currentConditions">
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+<script>
+// Initialize charts
+let mainChart, pollutantChart, aqiPieChart;
+
+// AQI color scale
+const aqiColors = {
+    good: 'rgba(0, 228, 0, 0.7)',
+    moderate: 'rgba(255, 255, 0, 0.7)',
+    sensitive: 'rgba(255, 126, 0, 0.7)',
+    unhealthy: 'rgba(255, 0, 0, 0.7)',
+    veryUnhealthy: 'rgba(153, 0, 76, 0.7)',
+    hazardous: 'rgba(126, 0, 35, 0.7)'
+};
+
+// Get AQI color
+function getAqiColor(aqi) {
+    if (!aqi) return '#cccccc';
+    if (aqi <= 50) return aqiColors.good;
+    if (aqi <= 100) return aqiColors.moderate;
+    if (aqi <= 150) return aqiColors.sensitive;
+    if (aqi <= 200) return aqiColors.unhealthy;
+    if (aqi <= 300) return aqiColors.veryUnhealthy;
+    return aqiColors.hazardous;
+}
+
+// Initialize Main Chart (PM2.5 by default)
+function initMainChart() {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    mainChart = new Chart(ctx, {
+        type: 'line',
+        data: { 
+            labels: [], 
+            datasets: [{
+                label: 'PM2.5',
+                data: [],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                tension: 0.1,
+                fill: true,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { 
+                    mode: 'index', 
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} µg/m³`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { 
+                    grid: { display: false },
+                    title: { display: true, text: 'Time' }
+                },
+                y: { 
+                    beginAtZero: false,
+                    title: { display: true, text: 'Concentration (µg/m³)' }
+                }
+            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false }
+        }
+    });
+}
+
+// Initialize Pollutant Chart (shows all pollutants)
+function initPollutantChart() {
+    const ctx = document.getElementById('pollutantChart').getContext('2d');
+    pollutantChart = new Chart(ctx, {
+        type: 'bar',
+        data: { 
+            labels: ['PM2.5', 'PM10', 'NO₂', 'O₃'], 
+            datasets: [{
+                label: 'Average Levels',
+                data: [0, 0, 0, 0],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(75, 192, 192, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(75, 192, 192, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                datalabels: { 
+                    anchor: 'end', 
+                    align: 'top',
+                    formatter: (value) => value.toFixed(2),
+                    font: { weight: 'bold' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} µg/m³`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    title: { 
+                        display: true, 
+                        text: 'Average Concentration (µg/m³)',
+                        font: { weight: 'bold' }
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+// Initialize AQI Pie Chart
+function initAqiPieChart() {
+    const ctx = document.getElementById('aqiPieChart').getContext('2d');
+    aqiPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Good', 'Moderate', 'Sensitive', 'Unhealthy', 'Very Unhealthy', 'Hazardous'],
+            datasets: [{
+                data: [0, 0, 0, 0, 0, 0],
+                backgroundColor: [
+                    aqiColors.good,
+                    aqiColors.moderate,
+                    aqiColors.sensitive,
+                    aqiColors.unhealthy,
+                    aqiColors.veryUnhealthy,
+                    aqiColors.hazardous
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 10
+                    }
+                },
+                tooltip: { 
+                    callbacks: { 
+                        label: ctx => `${ctx.label}: ${ctx.raw}%` 
+                    } 
+                },
+                datalabels: {
+                    formatter: (value) => value > 0 ? `${value}%` : '',
+                    color: '#fff',
+                    font: { weight: 'bold' }
+                }
+            },
+            cutout: '65%'
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+// Fetch data from server
+async function fetchData() {
+    const stationId = document.getElementById('stationSelect').value;
+    const days = document.getElementById('timeRange').value;
+    const pollutant = document.getElementById('pollutantSelect').value;
+    
+    try {
+        // Show loading state
+        document.getElementById('currentConditions').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+        
+        const response = await fetch(`/air-quality/api/air-quality/?station=${stationId}&days=${days}&t=${Date.now()}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("API Response:", data);
+        
+        if (!data || !data.timestamps) {
+            throw new Error("Invalid data received from server");
+        }
+        
+        updateCharts(data, pollutant);
+        updateCurrentConditions(data.latest);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById('currentConditions').innerHTML = `
+            <div class="alert alert-danger">
+                ${error.message || "Failed to load data. Please try again."}
+            </div>
+        `;
+    }
+}
+
+function updateCharts(data, pollutant) {
+    // 1. Update Main Chart (single pollutant trend)
+    mainChart.data.labels = data.timestamps;
+    mainChart.data.datasets = [{
+        label: pollutant.toUpperCase(),
+        data: data[pollutant] || [],
+        borderColor: '#3e95cd',
+        backgroundColor: 'rgba(62, 149, 205, 0.2)',
+        tension: 0.1,
+        fill: true
+    }];
+    mainChart.update();
+    
+    // 2. Update Averages Chart (ALL pollutants)
+    console.log("Debug Averages:", {  // Debug log
+        pm25: data.avg_pm25,
+        pm10: data.avg_pm10,
+        no2: data.avg_no2,
+        o3: data.avg_o3
+    });
+    
+    pollutantChart.data.datasets = [{
+        label: 'Average Levels',
+        data: [
+            data.avg_pm25 || 0,
+            data.avg_pm10 || 0,
+            data.avg_no2 || 0,
+            data.avg_o3 || 0
+        ],
+        backgroundColor: [
+            'rgba(255, 99, 132, 0.7)',  // PM2.5 (red)
+            'rgba(54, 162, 235, 0.7)',   // PM10 (blue)
+            'rgba(255, 159, 64, 0.7)',   // NO₂ (yellow)
+            'rgba(75, 192, 192, 0.7)'    // O₃ (teal)
+        ],
+        borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 159, 64, 1)',
+            'rgba(75, 192, 192, 1)'
+        ],
+        borderWidth: 1
+    }];
+    pollutantChart.update();
+    
+    // 3. Update AQI Pie Chart
+    aqiPieChart.data.datasets[0].data = data.aqi_distribution || [0, 0, 0, 0, 0, 0];
+    aqiPieChart.update();
+}
+
+// Update current conditions panel
+function updateCurrentConditions(latest) {
+    if (!latest) {
+        document.getElementById('currentConditions').innerHTML = `
+            <div class="alert alert-warning">
+                No current conditions data available
+            </div>
+        `;
+        return;
+    }
+
+    const conditionsHtml = `
+        <div class="row">
+            <div class="col-md-3 text-center">
+                <div class="display-4" style="color: ${getAqiColor(latest.aqi)}">
+                    ${latest.aqi || 'N/A'}
+                </div>
+                <div class="text-muted">Current AQI</div>
+            </div>
+            
+            <div class="col-md-3">
+                <h5><i class="fas fa-wind text-info me-2"></i> PM2.5</h5>
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-warning" 
+                        style="width: ${Math.min((latest.pm25 || 0)/50*100, 100)}%">
+                        ${latest.pm25 ? latest.pm25.toFixed(2) : 'N/A'} µg/m³
+                    </div>
+                </div>
+                
+                <h5><i class="fas fa-smog text-secondary me-2"></i> PM10</h5>
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-secondary" 
+                        style="width: ${Math.min((latest.pm10 || 0)/100*100, 100)}%">
+                        ${latest.pm10 ? latest.pm10.toFixed(2) : 'N/A'} µg/m³
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <h5><i class="fas fa-temperature-high text-danger me-2"></i> Temperature</h5>
+                <p class="fs-4">${latest.temperature ? latest.temperature.toFixed(1) : 'N/A'} °C</p>
+                
+                <h5><i class="fas fa-tint text-primary me-2"></i> Humidity</h5>
+                <p class="fs-4">${latest.humidity ? latest.humidity.toFixed(1) : 'N/A'}%</p>
+            </div>
+            
+            <div class="col-md-3">
+                <h5>Dominant Pollutant</h5>
+                <p class="fs-4 badge bg-dark">${latest.dominant_pollutant || 'N/A'}</p>
+                
+                <h5>Last Updated</h5>
+                <p class="text-muted">${latest.timestamp || 'N/A'}</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('currentConditions').innerHTML = conditionsHtml;
+}
+
+// Event Listeners
+document.getElementById('refreshBtn').addEventListener('click', fetchData);
+document.getElementById('stationSelect').addEventListener('change', fetchData);
+document.getElementById('timeRange').addEventListener('change', fetchData);
+document.getElementById('pollutantSelect').addEventListener('change', fetchData);
+
+// Initialize everything when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    initMainChart();
+    initPollutantChart();
+    initAqiPieChart();
+    fetchData();
+    
+    // Auto-refresh every 5 minutes
+    setInterval(fetchData, 300000);
+});
+</script>
+{% endblock %}

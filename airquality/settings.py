@@ -11,13 +11,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import os
+import psycopg2
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -25,6 +27,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-*7g!&ml2ln(@iru7is9!4&pfudzij2vs%#&(gg8p8*qvg4)%p&'
 OPENAI_API_KEY = os.getenv('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')
 GOOGLE_MAPS_API_KEY = os.getenv('AIzaSyAgp3NnezwlY5Xe7AJvbmRJzdjNigTuZxU')
+
+# MPESA_CONFIG = {
+MPESA_CONSUMER_KEY = 'p6K0xADABjX4RcZkeJMSOhGGTLeNZx1NWZ3dKM0xw32FJGpp',
+MPESA_CONSUMER_SECRET = 'QuH0qNG7WtI78maGF8W3QYSuqgEKWSGvTgmaHxAL2v7XRmMAY3mDvrAckwDA7K0Z',
+MPESA_SHORTCODE = "174379", # "174379 !
+MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919',
+MPESA_CALLBACK_URL = 'https://mydomain.com/path',
+#'MPESA_CALLBACK_URL': 'https://sandbox.safaricom.co.ke/mpesa/c2b',
+#'ENVIRONMENT' : 'sandbox',  # or 'production'
+#'TRANSACTION_TYPE': 'CustomerPayBillOnline'
+
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -42,7 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'authentication',
-    'chatbot',
+    'advocates',
     'health_providers',
     'ecommerce',
     'air_quality',
@@ -52,10 +67,12 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+   # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.cache.UpdateCacheMiddleware',  
+    'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'airquality.urls'
@@ -63,7 +80,7 @@ ROOT_URLCONF = 'airquality.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -84,12 +101,13 @@ WSGI_APPLICATION = 'airquality.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'opiyo12_db',
-        'USER': 'air_quality_user',
-        'PASSWORD': 'your_secure_password',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'djangodb',
+        'USER': 'djangouser',
+        'PASSWORD': 'django123',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '3306',
+        #'CONN_MAX_AGE': 600,
     }
 }
 
@@ -128,10 +146,57 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'authentication.User'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Use your email provider's SMTP
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'austineopiyo84@gmail.com'  # Replace with your email
+EMAIL_HOST_PASSWORD = 'jihzihvlwqffphyj'  # Use an app password, not your real password
+DEFAULT_FROM_EMAIL = 'austineopiyo84@gmail.com'  # Default "from" address
+SERVER_EMAIL = 'austineopiyo84@gmail.com'
+# Where contact form emails should be delivered
+CONTACT_EMAIL = 'austineopiyo84@gmail.com'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
+APPEND_SLASH = True
+
+AUTHENTICATION_BACKENDS = [
+    'authentication.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',  # Keep this for admin
+]
+LOGIN_URL = '/auth/login/' # URL to redirect to for login
+
+# LOGIN_REDIRECT_URL = 'index.html'  # Redirect after login
+# LOGOUT_REDIRECT_URL = '/auth/login/' 
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+        },
+    },
+}

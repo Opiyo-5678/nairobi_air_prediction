@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Payment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .payment-details {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .cancel-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            text-decoration: none;
+        }
+
+        .cancel-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Complete Payment</h1>
+        
+        <div class="payment-details">
+            <p><strong>Provider:</strong> {{ provider.name }}</p>
+            <p><strong>Service:</strong> {{ payment_for|title }}</p>
+            <p><strong>Amount:</strong> KSh {{ amount }}</p>
+        </div>
+        
+        <form action="{% url 'initiate_payment' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="provider_id" value="{{ provider.id }}">
+            <input type="hidden" name="payment_for" value="{{ payment_for }}">
+            
+            <label for="phone_number">M-Pesa Phone Number:</label>
+            <input type="text" id="phone_number" name="phone_number" placeholder="e.g. 07XXXXXXXX" required>
+            
+            <button type="submit">Pay Now</button>
+        </form>
+        
+        <a href="{% url 'health_provider_page' %}" class="cancel-link">Cancel</a>
+    </div>
+</body>
+</html>

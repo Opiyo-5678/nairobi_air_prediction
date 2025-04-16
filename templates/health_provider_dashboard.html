@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Provider Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .table {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Health Provider Dashboard</h1>
+        <h2>Pending Consultation Requests</h2>
+        
+        {% if consultation_requests %}
+            <table class="table table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th>User</th>
+                        <th>Issue</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for consultation in consultation_requests %}
+                        <tr>
+                            <td>{{ consultation.user.username }}</td>
+                            <td>{{ consultation.issue }}</td>
+                            <td>{{ consultation.created_at }}</td>
+                            <td>
+                                <!-- Use consultation.id for the send_message URL -->
+                                <a href="{% url 'send_message' consultation.id %}" class="btn btn-primary btn-sm">Respond</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No pending consultation requests.</p>
+        {% endif %}
+
+        <h2>Send Message to User</h2>
+        <form method="post" action="{% url 'send_message' consultation.id %}">  <!-- Add consultation.id here -->
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="receiver_id">Select User:</label>
+                <select name="receiver_id" id="receiver_id" class="form-control" required>
+                    {% for consultation in consultation_requests %}
+                        <option value="{{ consultation.user.id }}">{{ consultation.user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="message">Message:</label>
+                <textarea name="message" id="message" class="form-control" rows="5" placeholder="Type your message here..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Send Message</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

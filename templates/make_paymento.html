@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Make Payment - BotoxCare Platform</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .text-primary {
+            color: #F2784B !important;
+        }
+
+        .bg-primary {
+            background-color: #1d2434 !important;
+        }
+
+        .btn-primary {
+            background-color: #F2784B;
+            border-color: #F2784B;
+        }
+
+        .btn-primary:hover {
+            background-color: #e16a3e;
+            border-color: #e16a3e;
+        }
+
+        .border-primary {
+            border-color: #F2784B !important;
+        }
+        
+        .form-control:focus {
+            border-color: #F2784B;
+            box-shadow: 0 0 0 0.25rem rgba(242, 120, 75, 0.25);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm">
+        <div class="container">
+            <a href="/" class="navbar-brand">
+                <h2 class="m-0 text-primary"><span class="text-dark">Botox</span>Care</h2>
+            </a>
+{#            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">#}
+{#                <span class="navbar-toggler-icon"></span>#}
+{#            </button>#}
+{#            <div class="collapse navbar-collapse" id="navbarCollapse">#}
+{#                <div class="navbar-nav ms-auto py-0">#}
+{#                    <a href="/" class="nav-item nav-link">Home</a>#}
+{#                    <a href="/services" class="nav-item nav-link">Our services</a>#}
+{#                    <a href="/treatments" class="nav-item nav-link">Treatments</a>#}
+{#                    <a href="/specialists" class="nav-item nav-link">Our Specialists</a>#}
+{#                    <a href="/about" class="nav-item nav-link">About</a>#}
+{#                    <a href="/dashboard" class="nav-item nav-link">Dashboard</a>#}
+{#                    <a href="/appointments" class="nav-item nav-link">Appointments</a>#}
+{##}
+{#                    <li class="nav-item dropdown">#}
+{#                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">#}
+{#                            My Account#}
+{#                        </a>#}
+{#                        <ul class="dropdown-menu">#}
+{#                            <li><a class="dropdown-item" href="/profile">My Profile</a></li>#}
+{#                            <li><a class="dropdown-item" href="/settings">Settings</a></li>#}
+{#                            <li><hr class="dropdown-divider"></li>#}
+{#                            <li><a class="dropdown-item" href="/logout">Logout</a></li>#}
+{#                        </ul>#}
+{#                    </li>#}
+{#                </div>#}
+{#                <a href="/book-appointment" class="btn btn-primary ms-3">Book Now</a>#}
+{#            </div>#}
+        </div>
+    </nav>
+
+    <!-- Payment Header -->
+    <section class="bg-light py-4 mb-4 shadow-sm">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-12 text-center">
+                    <h1 class="fw-bold">Make <span class="text-primary">Payment</span></h1>
+                    <p class="lead mb-0">Complete your transaction securely</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment Form Content -->
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0">Payment Details</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-3 mb-md-0">
+                                    <div class="me-3">
+                                        <i class="fa-solid fa-credit-card text-primary fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Secure Payment</h6>
+                                        <p class="small text-muted mb-0">Your payment information is encrypted</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <div class="d-flex align-items-center justify-content-md-end">
+                                    <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.0.0/min/flat/visa.svg" alt="Visa" class="me-2" style="height: 24px;">
+                                    <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.0.0/min/flat/mastercard.svg" alt="Mastercard" class="me-2" style="height: 24px;">
+                                    <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.0.0/min/flat/amex.svg" alt="American Express" class="me-2" style="height: 24px;">
+                                    <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.0.0/min/flat/discover.svg" alt="Discover" style="height: 24px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row g-3">
+                                {{ form.as_p }}
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="savePaymentInfo">
+                                    <label class="form-check-label" for="savePaymentInfo">
+                                        Save payment information for future appointments
+                                    </label>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary py-2">Complete Payment</button>
+                                </div>
+                                
+                                <p class="small text-center text-muted mt-3">
+                                    By proceeding with the payment, you agree to our <a href="/terms" class="text-primary">Terms of Service</a> and <a href="/privacy" class="text-primary">Privacy Policy</a>.
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    {% comment %} <a href="{% url 'appointment_list' %}" class="btn btn-link text-primary">Return to Appointments</a> {% endcomment %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>About Us</h5>
+                    <p>Connecting patients with top-tier Botox specialists</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/faq" class="text-white">FAQ</a></li>
+                        <li><a href="/privacy" class="text-white">Privacy Policy</a></li>
+                        <li><a href="/terms" class="text-white">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contact</h5>
+                    <p>Email: support@botoxplatform.com</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <div class="mt-3">
+                        <a href="#" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 text-center">
+                © 2025 BotoxCare. All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

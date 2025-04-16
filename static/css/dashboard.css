@@ -1,0 +1,245 @@
+/* Air Quality Dashboard CSS */
+
+/* Main Layout */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Roboto', 'Segoe UI', sans-serif;
+}
+
+.container-fluid {
+    max-width: 1400px;
+    padding-bottom: 30px;
+}
+
+h1.mt-4 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 25px;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 10px;
+    display: inline-block;
+}
+
+/* Cards Styling */
+.card {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    font-weight: 600;
+    padding: 12px 20px;
+}
+
+.card-header i {
+    margin-right: 8px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Control Panel Styling */
+.form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block; /* Ensures consistent block display */
+    height: 24px; /* Fixed height for alignment */
+}
+
+.form-select, .form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 10px 15px;
+    font-size: 14px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    height: 44px; /* Fixed height for alignment */
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Make sure station and time range controls are aligned */
+#stationSelect, #timeRange {
+    width: 20%;
+    /*min-width: 200;*/
+}
+
+.col-md-5 {
+    display: flex;
+    flex-direction: column;
+}
+
+#refreshBtn {
+    padding: 10px 15px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-weight: 500;
+    height: 44px; /* Match height with select boxes */
+    margin-top: 32px; /* Align with select boxes (matches label + margin height) */
+}
+
+#refreshBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#refreshBtn i {
+    margin-right: 8px;
+}
+
+/* Chart Containers */
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Current Conditions Panel */
+#currentConditions .row {
+    align-items: center;
+}
+
+#currentConditions .display-4 {
+    font-weight: 700;
+    font-size: 3rem;
+    margin-bottom: 5px;
+}
+
+#currentConditions h5 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+#currentConditions .fs-4 {
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+#currentConditions .progress {
+    height: 24px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+#currentConditions .progress-bar {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 24px;
+    padding: 0 10px;
+    text-align: left;
+}
+
+#currentConditions .text-muted {
+    font-size: 14px;
+}
+
+#currentConditions .badge {
+    font-size: 16px;
+    padding: 8px 15px;
+}
+
+/* Responsiveness */
+@media (max-width: 992px) {
+    #currentConditions .col-md-3 {
+        margin-bottom: 20px;
+    }
+    
+    #currentConditions .display-4 {
+        font-size: 2.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 15px;
+    }
+    
+    h1.mt-4 {
+        font-size: 1.8rem;
+    }
+    
+    #currentConditions .row > div {
+        margin-bottom: 25px;
+    }
+    
+    #refreshBtn {
+        margin-top: 16px; /* Smaller margin on mobile */
+    }
+    #stationSelect, #timeRange {
+        width: 100%;
+    } 
+}
+
+/* Loading Spinner */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 6px;
+    padding: 15px 20px;
+    font-weight: 500;
+}
+
+/* AQI Category Colors */
+.aqi-good {
+    background-color: rgba(0, 228, 0, 0.2);
+    border-left: 5px solid rgba(0, 228, 0, 1);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.aqi-moderate {
+    background-color: rgba(255, 255, 0, 0.2);
+    border-left: 5px solid rgba(255, 255, 0, 1);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.aqi-sensitive {
+    background-color: rgba(255, 126, 0, 0.2);
+    border-left: 5px solid rgba(255, 126, 0, 1);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.aqi-unhealthy {
+    background-color: rgba(255, 0, 0, 0.2);
+    border-left: 5px solid rgba(255, 0, 0, 1);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.aqi-very-unhealthy {
+    background-color: rgba(153, 0, 76, 0.2);
+    border-left: 5px solid rgba(153, 0, 76, 1);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.aqi-hazardous {
+    background-color: rgba(126, 0, 35, 0.2);
+    border-left: 5px solid rgba(126, 0, 35, 1);
+    padding: 10px;
+    border-radius: 4px;
+}

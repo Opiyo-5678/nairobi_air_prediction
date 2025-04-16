@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality Prediction</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        p {
+            text-align: center;
+            color: #666;
+        }
+
+        #map { 
+            height: 600px;
+            width: 80%;
+            margin: 0 auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Loading circle */
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading-circle {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        } 
+        .air-quality-info { 
+            margin-top: 20px; 
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .legend {
+            line-height: 18px;
+            color: #555;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+        .info-box {
+            padding: 10px;
+            background: white;
+            width: 80%;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        .station-details {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            width: 80%;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .aqi-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+        }
+        /* h1, h2, h3 {
+            color: #333;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666; */
+        
+        /* Health recommendation styles */
+        .health-recommendation {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+        }
+        .health-recommendation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .health-category {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .alert-level {
+            padding: 4px 12px;
+            border-radius: 20px;
+            background-color: white;
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Nairobi Air Quality Monitoring</h1>
+    <p>This map shows real-time air quality data from multiple monitoring stations across Nairobi.</p>
+    
+    <!-- Loading spinner -->
+    <div id="loading" class="loading">
+        <div class="loading-circle"></div>
+        <p>Loading air quality data...</p>
+    </div>
+    
+    <div id="station-details" class="station-details">
+        <h3 id="station-name">Select a station on the map</h3>
+        <div id="station-content"></div>
+        <div id="health-recommendation"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([{{ initial_lat }}, {{ initial_lon }}], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Store markers for future reference
+        let markers = [];
+        
+        // Add a legend to the map
+        function addLegend() {
+            const legend = L.control({position: 'bottomright'});
+            
+            legend.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'info legend');
+                const grades = [0, 50, 100, 150, 250, 300];
+                const labels = ['Good', 'Moderate', 'Unhealthy for Sensitive Groups', 'Unhealthy', 'Very Unhealthy', 'Hazardous'];
+                const colors = ['green', 'yellow', 'orange', 'red', 'purple', 'maroon'];
+                
+                div.innerHTML = '<h4>Air Quality Index</h4>';
+                
+                // Loop through our AQI intervals and create a label with a colored square for each interval
+                for (let i = 0; i < grades.length; i++) {
+                    div.innerHTML +=
+                        '<i style="background:' + colors[i] + '"></i> ' +
+                        grades[i] + (grades[i + 1] ? '&ndash;' + (grades[i + 1] - 1) + ' - ' : '+') + 
+                        labels[i] + '<br>';
+                }
+                
+                return div;
+            };
+            
+            legend.addTo(map);
+        }
+        
+        // Function to get color based on AQI
+        function getColorForAQI(aqi) {
+            if (aqi === 'Error' || aqi === 'N/A') return "gray";  // Error or no data
+            aqi = parseInt(aqi);
+            if (aqi <= 50) return "green";      // Good
+            if (aqi <= 100) return "yellow";    // Moderate
+            if (aqi <= 150) return "orange";    // Unhealthy for Sensitive Groups
+            if (aqi <= 250) return "red";       // Unhealthy
+            if (aqi <= 300) return "purple";    // Very Unhealthy
+            return "maroon";                    // Hazardous
+        }
+        
+        // Function to get descriptive text for AQI level
+        function getAQIDescription(aqi) {
+            if (aqi === 'Error' || aqi === 'N/A') return "Unknown";
+            aqi = parseInt(aqi);
+            if (aqi <= 50) return "Good";
+            if (aqi <= 100) return "Moderate";
+            if (aqi <= 150) return "Unhealthy for Sensitive Groups";
+            if (aqi <= 200) return "Unhealthy";
+            if (aqi <= 300) return "Very Unhealthy";
+            return "Hazardous";
+        }
+        
+        // Function to get health recommendations based on AQI value
+        function getHealthRecommendation(aqi) {
+            if (aqi === 'Error' || aqi === 'N/A') {
+                return {
+                    category: "Unknown",
+                    recommendation: "Data unavailable. Check back later for health recommendations.",
+                    alertLevel: "No data",
+                    color: "gray"
+                };
+            }
+            
+            aqi = parseInt(aqi);
+            
+            if (aqi <= 49) {
+                return {
+                    category: "Good",
+                    recommendation: "Enjoy outdoor activities! Air quality is good.",
+                    alertLevel: "No alert",
+                    color: "green"
+                };
+            } else if (aqi <= 99) {
+                return {
+                    category: "Moderate",
+                    recommendation: "Reduce prolonged outdoor exercise if you are sensitive to pollution.",
+                    alertLevel: "Mild caution",
+                    color: "yellow"
+                };
+            } else if (aqi <= 149) {
+                return {
+                    category: "Unhealthy for Sensitive Groups",
+                    recommendation: "Wear a mask, close windows.",
+                    alertLevel: "Dangerous",
+                    color: "orange"
+                };
+            } else if (aqi <= 199) {
+                return {
+                    category: "Unhealthy",
+                    recommendation: "Run an air purifier, limit outdoor activity. Wear a mask!",
+                    alertLevel: "Very dangerous",
+                    color: "red"
+                };
+            } else if (aqi <= 299) {
+                return {
+                    category: "Very Unhealthy",
+                    recommendation: "Avoid outdoor activities, use air filters.",
+                    alertLevel: "Extremely dangerous",
+                    color: "purple"
+                };
+            } else {
+                return {
+                    category: "Hazardous",
+                    recommendation: "Stay indoors, seek medical help if necessary.",
+                    alertLevel: "Emergency alert",
+                    color: "maroon"
+                };
+            }
+        }
+        
+        // Function to display station details
+        function showStationDetails(station) {
+            const stationDetails = document.getElementById('station-details');
+            const stationName = document.getElementById('station-name');
+            const stationContent = document.getElementById('station-content');
+            const healthRecommendationDiv = document.getElementById('health-recommendation');
+            
+            stationDetails.style.display = 'block';
+            stationName.textContent = station.name;
+            
+            let content = '';
+            
+            // Handle error cases
+            if (station.aqi === 'Error') {
+                content = '<p>Error fetching data for this station. Please try again later.</p>';
+                stationContent.innerHTML = content;
+                healthRecommendationDiv.innerHTML = '';
+                return;
+            }
+            
+            // AQI information
+            const aqiColor = getColorForAQI(station.aqi);
+            const aqiDesc = getAQIDescription(station.aqi);
+            
+            content += `
+                <p><strong>Air Quality Index:</strong> 
+                <span class="aqi-badge" style="background-color: ${aqiColor};">
+                    ${station.aqi} - ${aqiDesc}
+                </span>
+                </p>
+                <p><strong>Dominant Pollutant:</strong> ${station.dominant_pollutant || 'N/A'}</p>
+                <p><strong>Last Updated:</strong> ${station.timestamp || 'N/A'}</p>
+            `;
+            
+            // Add pollutant details if available
+            if (station.pollutants && Object.keys(station.pollutants).length > 0) {
+                content += '<h4>Pollutant Concentrations</h4><ul>';
+                
+                const pollutantNames = {
+                    'pm25': 'PM2.5 (μg/m³)',
+                    'pm10': 'PM10 (μg/m³)',
+                    'o3': 'Ozone (ppb)',
+                    'no2': 'Nitrogen Dioxide (ppb)',
+                    'so2': 'Sulfur Dioxide (ppb)',
+                    'co': 'Carbon Monoxide (ppm)',
+                    'h': 'Humidity (%)',
+                    't': 'Temperature (°C)',
+                    'p': 'Pressure (hPa)',
+                    'w': 'Wind (m/s)'
+                };
+                
+                for (const [pollutant, value] of Object.entries(station.pollutants)) {
+                    const pollutantName = pollutantNames[pollutant] || pollutant;
+                    content += `<li><strong>${pollutantName}:</strong> ${value}</li>`;
+                }
+                
+                content += '</ul>';
+            }
+            
+            stationContent.innerHTML = content;
+            
+            // Add health recommendation
+            const healthInfo = getHealthRecommendation(station.aqi);
+            
+            const healthContent = `
+                <div class="health-recommendation" style="background-color: ${healthInfo.color};">
+                    <div class="health-recommendation-header">
+                        <div class="health-category">${healthInfo.category}</div>
+                        <div class="alert-level">${healthInfo.alertLevel}</div>
+                    </div>
+                    <div>${healthInfo.recommendation}</div>
+                </div>
+            `;
+            
+            healthRecommendationDiv.innerHTML = healthContent;
+        }
+        
+     // Function to fetch air quality data from the backend
+async function fetchAirQualityData() {
+    document.getElementById('loading').style.display = 'block';
+    
+    try {
+        // Make sure this URL matches your actual URL pattern
+        // The server is returning HTML instead of JSON, so the URL is likely incorrect
+        const response = await fetch('/air-quality/api/air-quality-data/');  
+        
+        // Check if the response is JSON before trying to parse it
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Expected JSON response but got ${contentType}`);
+        }
+        
+        const data = await response.json();
+        
+        document.getElementById('loading').style.display = 'none';
+        
+        if (data.air_quality_data && data.air_quality_data.length > 0) {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Add markers for each station
+            data.air_quality_data.forEach(station => {
+                const marker = L.circleMarker([station.latitude, station.longitude], {
+                    radius: 10,
+                    fillColor: getColorForAQI(station.aqi),
+                    color: "#000",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+                
+                // Add popup with basic info
+                marker.bindPopup(`
+                    <div class="info-box">
+                        <strong>${station.name}</strong><br>
+                        AQI: ${station.aqi}<br>
+                        <em>Click for more details</em>
+                    </div>
+                `);
+                
+                // Add click handler to show detailed info
+                marker.on('click', function() {
+                    showStationDetails(station);
+                });
+                
+                markers.push(marker);
+            });
+            
+            // Add the legend
+            addLegend();
+            
+        } else {
+            document.getElementById('loading').innerHTML = 
+                `<p style="color: red;">Error fetching air quality data or no stations available.</p>`;
+        }
+    } catch (error) {
+        document.getElementById('loading').innerHTML = 
+            `<p style="color: red;">Error: ${error.message}</p>`;
+        console.error("Error fetching air quality data:", error);
+    }
+}
+        
+        // Fetch data initially
+        fetchAirQualityData();
+        
+        // Fetch data every 10 minutes (600,000 milliseconds)
+        setInterval(fetchAirQualityData, 600000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historical Air Quality Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .report-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .report-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background-color: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .report-btn:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .report-btn.secondary {
+            background-color: #3498db;
+        }
+        .report-btn.secondary:hover {
+            background-color: #2980b9;
+        }
+        .report-btn.tertiary {
+            background-color: #2ecc71;
+        }
+        .report-btn.tertiary:hover {
+            background-color: #27ae60;
+        }
+        #airQualityChart {
+            width: 100%;
+            max-width: 1000px;
+            height: 500px;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 20px;
+            flex-direction: column;
+        }
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Historical Air Quality Data</h1>
+    
+    <div class="report-actions">
+        <a href="{% url 'air_quality:generate_report' %}" class="report-btn" target="_blank" id="pdfBtn">
+            <i class="fas fa-file-pdf"></i> PDF Report
+        </a>
+        <button class="report-btn secondary" onclick="printReport()">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <button class="report-btn tertiary" onclick="downloadCSV()">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+    </div>
+    
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">Generating Report...</div>
+    </div>
+    
+    <canvas id="airQualityChart"></canvas>
+
+    <script>
+        // Function to get color based on AQI
+        function getColorForAQI(aqi) {
+            if (aqi <= 50) return 'green';
+            if (aqi <= 100) return 'yellow';
+            if (aqi <= 150) return 'orange';
+            if (aqi <= 200) return 'red';
+            if (aqi <= 300) return 'purple';
+            return 'maroon';
+        }
+
+        function showLoading(message) {
+            const overlay = document.getElementById('loadingOverlay');
+            document.getElementById('loadingText').textContent = message;
+            overlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // PDF Button click handler
+        document.getElementById('pdfBtn').addEventListener('click', function() {
+            showLoading("Generating PDF report...");
+        });
+
+        function printReport() {
+            showLoading("Preparing report for printing...");
+            
+            const chartImage = document.getElementById('airQualityChart').toDataURL('image/png');
+            const printWindow = window.open('', '_blank');
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Air Quality Report</title>
+                    <style>
+                        body { font-family: Arial; margin: 20px; }
+                        h1 { color: #2c3e50; text-align: center; }
+                        .report-date { text-align: center; margin-bottom: 20px; }
+                        .chart-container { width: 100%; text-align: center; margin: 20px 0; }
+                        @media print {
+                            body { margin: 0; padding: 10mm; }
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Air Quality Report</h1>
+                    <div class="report-date">
+                        Generated on: ${new Date().toLocaleString()}
+                    </div>
+                    <div class="chart-container">
+                        <img src="${chartImage}" style="max-width: 100%; height: auto;">
+                    </div>
+                    <button class="no-print" onclick="window.print()" 
+                        style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; display: block; margin: 20px auto;">
+                        Print Report
+                    </button>
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            hideLoading();
+            
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500);
+            };
+        }
+
+        function downloadCSV() {
+            showLoading("Preparing CSV download...");
+            
+            fetch("{% static 'air_quality_data.csv' %}")
+                .then(response => response.text())
+                .then(csvData => {
+                    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.setAttribute('hidden', '');
+                    a.setAttribute('href', url);
+                    a.setAttribute('download', 'air_quality_data_export.csv');
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Error downloading CSV:', error);
+                    hideLoading();
+                    alert('Error downloading CSV file. Please try again.');
+                });
+        }
+
+        function loadChart() {
+            Papa.parse("{% static 'air_quality_data.csv' %}", {
+                download: true,
+                header: false,
+                dynamicTyping: true,
+                complete: function(results) {
+                    const data = results.data;
+                    const timestamps = data.map(entry => entry[0]);
+                    const aqiValues = data.map(entry => entry[1]);
+                    const pm25Values = data.map(entry => entry[2]);
+
+                    const ctx = document.getElementById('airQualityChart').getContext('2d');
+
+                    if (window.airQualityChart instanceof Chart) {
+                        window.airQualityChart.data.labels = timestamps;
+                        window.airQualityChart.data.datasets[0].data = aqiValues;
+                        window.airQualityChart.data.datasets[1].data = pm25Values;
+                        window.airQualityChart.update();
+                    } else {
+                        window.airQualityChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: timestamps,
+                                datasets: [
+                                    {
+                                        label: 'AQI',
+                                        data: aqiValues,
+                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        backgroundColor: aqiValues.map(aqi => getColorForAQI(aqi)),
+                                        fill: false,
+                                        borderWidth: 2,
+                                        tension: 0.4,
+                                    },
+                                    {
+                                        label: 'PM2.5',
+                                        data: pm25Values,
+                                        borderColor: 'rgba(255, 99, 132, 1)',
+                                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                        fill: false,
+                                        borderWidth: 2,
+                                        tension: 0.4,
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                animation: {
+                                    duration: 1000,
+                                    easing: 'easeInOutQuad',
+                                },
+                                scales: {
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Time',
+                                            font: { size: 16 }
+                                        },
+                                        ticks: { font: { size: 14 } }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Value',
+                                            font: { size: 16 }
+                                        },
+                                        ticks: { font: { size: 14 } }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        labels: { font: { size: 14 } }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Historical Air Quality Data',
+                                        font: { size: 18 },
+                                        padding: { top: 10, bottom: 30 }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+                error: function(error) {
+                    console.error("Error loading CSV file:", error);
+                }
+            });
+        }
+        
+        // Load chart initially
+        loadChart();
+        
+        // Reload chart data every 5 minutes
+        setInterval(loadChart, 300000);
+    </script>
+</body>
+</html>

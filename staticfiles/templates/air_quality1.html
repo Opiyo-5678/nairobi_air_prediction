@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/air_quality.css' %}">
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAgp3NnezwlY5Xe7AJvbmRJzdjNigTuZxU&callback=initMap"></script>
+    <!-- Replace with your actual API key -->
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>Air Quality Monitor</h1>
+            <nav>
+                <ul>
+                    <li><a href="{% url 'index' %}">Home</a></li>
+                    
+                </ul>
+            
+        </div>
+    </header>
+
+    <section class="air-quality">
+        <div class="container">
+            <h2>Air Quality Locations</h2>
+            <div id="map" style="height: 400px; width: 100%;">
+                <div id="mapError" style="color: red;"></div>
+            </div>
+            <div id="airQualityResult">
+                <!-- Air quality data will be displayed here -->
+            </div>
+            <button id="getLocationBtn">Get My Location</button>
+        </div>
+    </section>
+
+    <form id="csrfForm">
+        {% csrf_token %}
+    </form>
+
+    <script>
+        let map;
+        let locations = {{ location_data|safe }}; // Get locations from Django
+        const initialLat = {{ initial_lat }}; // Get initial latitude from Django
+        const initialLon = {{ initial_lon }}; // Get initial longitude from Django
+            function initMap() {
+            try {
+                map = new google.maps.Map(document.getElementById('map'), {
+                center: {
+                    lat: initialLat,
+                    lng: initialLon
+                }, // Initial map center from Django
+                zoom: 12,
+              });
+
+              // Add markers for all locations from CSV
+              locations.forEach(location => {
+                const marker = new google.maps.Marker({
+                  position: {
+                    lat: location.lat,
+                    lng: location.lon
+                  },
+                  map: map,
+                  title: location.name,
+                });
+
+                marker.addListener('click', () => {
+                  // Fetch air quality data for this location and display it
+                fetchAirQuality(location.lat, location.lon, location.name);
+                });
+              });
+                // Request location permission immediately (or show a message)
+              if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(() => {
+                    // Permission granted or already granted
+                  }, () => {
+                  alert('Location access denied. Please enable it in your browser settings.');
+                  });
+              } else {
+                  alert('Geolocation is not supported by your browser.');
+              }
+          } catch (error) {
+            console.error("Error initializing map:", error);
+          }
+        }
+
+        async function fetchAirQuality(lat, lon, name) {
+          try {
+            const response = await fetch("{% url 'air_quality:predict_air_quality' %}", {  // ⭐️ CORRECTED LINE ⭐️
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('#csrfForm input[name="csrfmiddlewaretoken"]').value,
+              },
+              body: JSON.stringify({
+                lat: lat,
+                lon: lon
+              }),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Failed to fetch air quality data: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log("Response received:", data);
+
+            document.getElementById('airQualityResult').innerHTML = `
+                <p><strong>Location:</strong> ${name}</p>
+                <p><strong>Prediction:</strong> ${data.prediction}</p>
+                <p><strong>Air Quality Level:</strong> ${data.air_quality_level}</p>
+                <p><strong>Recommendations:</strong> ${data.recommendations}</p>
+                <p><strong>Alert:</strong> ${data.alert}</p>
+            `;
+          } catch (error) {
+            console.error('Fetch error:', error);
+            document.getElementById('airQualityResult').innerText = 'Failed to fetch air quality data: ' + error
+              .message;
+          }
+        }
+
+        function deg2rad(deg) {
+          return deg * (Math.PI / 180)
+        }
+
+        // Function to calculate distance between two coordinates
+        function distance(lat1, lon1, lat2, lon2) {
+          const R = 6371; // Radius of the earth in km
+          const dLat = deg2rad(lat2 - lat1);
+          const dLon = deg2rad(lon2 - lon1);
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const d = R * c; // Distance in km
+          return d;
+        }
+
+        document.getElementById('getLocationBtn').addEventListener('click', () => {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (position) => {
+              const userLat = position.coords.latitude;
+              const userLon = position.coords.longitude;
+
+              // Find closest location from CSV
+              let closestLocation = null;
+              let minDistance = Infinity;
+
+              locations.forEach(location => {
+                const dist = distance(userLat, userLon, location.lat, location.lon);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  closestLocation = location;
+                }
+              });
+
+              if (closestLocation) {
+                // Display marker on map at closest location
+                map.setCenter({
+                  lat: closestLocation.lat,
+                  lng: closestLocation.lon
+                });
+                const userMarker = new google.maps.Marker({
+                  position: {
+                    lat: closestLocation.lat,
+                    lng: closestLocation.lon
+                  },
+                  map: map,
+                  title: "Your closest location: " + closestLocation.name
+                });
+
+                // Fetch and display air quality data for the closest location
+                fetchAirQuality(closestLocation.lat, closestLocation.lon, closestLocation.name);
+              }
+
+            }, () => {
+              alert('Could not retrieve your location.');
+            });
+          } else {
+            alert('Geolocation is not supported by your browser.');
+          }
+        });
+        window.onerror = function(message, source, lineno, colno, error) {
+          document.getElementById("mapError").innerText = "Error: " + message +
+            " Source: " + source +
+            " Line: " + lineno +
+            " Column: " + colno;
+        };
+    </script>
+</body>
+
+</html>

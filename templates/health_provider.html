@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Providers</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .provider-title {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .providers-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+            padding: 0;
+            list-style-type: none;
+        }
+
+        .provider-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .provider-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .provider-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .profile-pic {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 20px;
+            border: 3px solid #3498db;
+        }
+
+        .provider-info {
+            flex: 1;
+        }
+
+        .provider-name {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .provider-specialty {
+            color: #7f8c8d;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+        .provider-contact {
+            color: #3498db;
+            margin: 5px 0;
+            font-size: 15px;
+        }
+
+        .provider-bio {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .service-section {
+            margin: 25px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .service-title {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .price-tag {
+            background-color: #27ae60;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .guest-info {
+            background-color: #fff8e1;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .guest-info p {
+            margin: 0 0 10px 0;
+            color: #5d4037;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .providers-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .provider-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-pic {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="provider-title">
+            <i class="fas fa-user-md"></i> Available Health Providers
+        </div>
+        
+        <ul class="providers-list">
+            {% for provider in health_providers %}
+                <li class="provider-card">
+                    <div class="provider-header">
+                        {% if provider.profile_pic %}
+                            <img src="{{ provider.profile_pic.url }}" alt="{{ provider.name }}" class="profile-pic">
+                        {% else %}
+                            <div class="profile-pic" style="background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <span style="font-size: 32px; color: #3498db;">{{ provider.name|slice:":1" }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="provider-info">
+                            <h2 class="provider-name">{{ provider.name }}</h2>
+                            <p class="provider-specialty">{{ provider.specialization }}</p>
+                            <p class="provider-contact">
+                                <i class="fas fa-envelope"></i> {{ provider.email }} | 
+                                <i class="fas fa-phone"></i> {{ provider.contact_info }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <p class="provider-bio">{{ provider.bio }}</p>
+
+                    <!-- Consultation Form -->
+                    <div class="service-section">
+                        <h3 class="service-title">
+                            <span><i class="fas fa-comment-medical"></i> Request Consultation</span>
+                            <span class="price-tag">KSh {{ provider.consultation_fee|default:"500" }}</span>
+                        </h3>
+                        
+                        {% if not user.is_authenticated %}
+                        <div class="guest-info">
+                            <p><i class="fas fa-info-circle"></i> Please provide your details to request a consultation</p>
+                        </div>
+                        {% endif %}
+                        
+                        <form id="consultation-form-{{ provider.id }}" action="{% url 'create_consultation' provider.id %}" method="post">
+                            {% csrf_token %}
+                            
+                            {% if not user.is_authenticated %}
+                            <div class="form-group">
+                                <label for="client_name_{{ provider.id }}">Your Full Name</label>
+                                <input type="text" id="client_name_{{ provider.id }}" name="client_name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="client_email_{{ provider.id }}">Your Email</label>
+                                <input type="email" id="client_email_{{ provider.id }}" name="client_email" required>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="form-group">
+                                <label for="issue_{{ provider.id }}">Describe your health issue</label>
+                                <textarea id="issue_{{ provider.id }}" name="issue" required></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn" onclick="submitConsultationForm('{{ provider.id }}')">
+                            <!---  <span-- id="consult-spinner-{{ provider.id }}" class="spinner hidden"></span-->
+                                Request Consultation & Proceed to Payment
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Appointment Form -->
+                    <div class="service-section">
+                        <h3 class="service-title">
+                            <span><i class="fas fa-calendar-check"></i> Book Appointment</span>
+                            <span class="price-tag">KSh {{ provider.appointment_fee|default:"1000" }}</span>
+                        </h3>
+                        
+                        {% if not user.is_authenticated %}
+                        <div class="guest-info">
+                            <p><i class="fas fa-info-circle"></i> Please provide your details to book an appointment</p>
+                        </div>
+                        {% endif %}
+                        
+                        <form id="appointment-form-{{ provider.id }}" action="{% url 'create_appointment' provider.id %}" method="post">
+                            {% csrf_token %}
+                            
+                            {% if not user.is_authenticated %}
+                            <div class="form-group">
+                                <label for="appt_client_name_{{ provider.id }}">Your Full Name</label>
+                                <input type="text" id="appt_client_name_{{ provider.id }}" name="client_name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="appt_client_email_{{ provider.id }}">Your Email</label>
+                                <input type="email" id="appt_client_email_{{ provider.id }}" name="client_email" required>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="form-group">
+                                <label for="date_time_{{ provider.id }}">Preferred Date & Time</label>
+                                <input type="datetime-local" id="date_time_{{ provider.id }}" name="date_time" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="reason_{{ provider.id }}">Reason for appointment</label>
+                                <textarea id="reason_{{ provider.id }}" name="reason"></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn" onclick="submitAppointmentForm('{{ provider.id }}')">
+                                {% comment %} <span id="appt-spinner-{{ provider.id }}" class="spinner hidden"></span> {% endcomment %}
+                                Book Appointment & Proceed to Payment
+                            </button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        function submitConsultationForm(providerId) {
+            const form = document.getElementById(`consultation-form-${providerId}`);
+            const spinner = document.getElementById(`consult-spinner-${providerId}`);
+            const button = form.querySelector('button[type="submit"]');
+            
+            // Validate form
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Show loading state
+            spinner.classList.remove('hidden');
+            button.disabled = true;
+            
+            // Submit form
+            form.submit();
+        }
+        
+        function submitAppointmentForm(providerId) {
+            const form = document.getElementById(`appointment-form-${providerId}`);
+            const spinner = document.getElementById(`appt-spinner-${providerId}`);
+            const button = form.querySelector('button[type="submit"]');
+            
+            // Validate form
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Validate date is in future
+            const dateInput = document.getElementById(`date_time_${providerId}`);
+            const selectedDate = new Date(dateInput.value);
+            const now = new Date();
+            
+            if (selectedDate <= now) {
+                alert('Please select a future date and time for your appointment');
+                return;
+            }
+            
+            // Show loading state
+            spinner.classList.remove('hidden');
+            button.disabled = true;
+            
+            // Submit form
+            form.submit();
+        }
+        
+        // Set minimum datetime for appointment to current time
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            // Format as YYYY-MM-DDThh:mm (local time)
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            // Set min attribute for all datetime-local inputs
+            document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+                input.min = minDateTime;
+            });
+        });
+    </script>
+</body>
+</html>

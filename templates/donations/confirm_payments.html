@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Confirm Pending Donations</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Pending Confirmation</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Amount</th>
+                    <th>Phone</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donation in pending_donations %}
+                <tr>
+                    <td>{{ donation.id }}</td>
+                    <td>KES {{ donation.amount }}</td>
+                    <td>{{ donation.phone_number }}</td>
+                    <td>{{ donation.date|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="donation_id" value="{{ donation.id }}">
+                            <div class="input-group">
+                                <input type="text" name="receipt_number" placeholder="MPesa Receipt" class="form-control" required>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-success">Confirm</button>
+                                </div>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No pending donations</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="col-md-6">
+        <h3>Recently Confirmed</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Amount</th>
+                    <th>Receipt</th>
+                    <th>Confirmed</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donation in confirmed_donations %}
+                <tr>
+                    <td>{{ donation.id }}</td>
+                    <td>KES {{ donation.amount }}</td>
+                    <td>{{ donation.mpesa_receipt }}</td>
+                    <td>{{ donation.confirmation_date|date:"Y-m-d H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No confirmed donations</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=djangodb
+      - DB_USER=djangouser
+      - DB_PASSWORD=django123
+      - DB_HOST=db
+      - DB_PORT=3306
+
+  db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_DATABASE: djangodb
+      MYSQL_USER: djangouser
+      MYSQL_PASSWORD: django123
+      MYSQL_ROOT_PASSWORD: trizah567
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

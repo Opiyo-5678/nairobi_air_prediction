@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .warrior-profile {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .profile-img {
+        height: 300px;
+        object-fit: cover;
+        border-radius: 10px 10px 0 0;
+    }
+    .availability-badge {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="warrior-profile mb-5">
+        {% if warrior.profile_picture %}
+        <img src="{{ warrior.profile_picture.url }}" class="profile-img w-100" alt="{{ warrior.name }}">
+        {% else %}
+        <div class="text-center py-5 bg-light">
+            <i class="fas fa-user-tie fa-5x text-muted"></i>
+        </div>
+        {% endif %}
+        
+        <div class="p-4">
+            <h1>{{ warrior.name }}</h1>
+            <h4 class="text-primary">{{ warrior.expertise }}</h4>
+            <div class="d-flex align-items-center mb-3">
+                <i class="fas fa-clock me-2"></i>
+                <span class="badge availability-badge">{{ warrior.availability }}</span>
+            </div>
+            
+            <div class="mb-4">
+                <h5>About Me</h5>
+                <p>{{ warrior.bio }}</p>
+            </div>
+            
+            <div class="mb-4">
+                <h5>Contact</h5>
+                <p><i class="fas fa-envelope me-2"></i> {{ warrior.email }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Consultation Form -->
+        <div class="col-md-6 mb-4">
+            <div class="form-section h-100">
+                <h3 class="mb-4">Quick Consultation</h3>
+                <form method="post" action="{% url 'advocates:warrior_detail' warrior.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="consultation" value="1">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Your Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Your Question</label>
+                        <textarea name="issue" class="form-control" rows="4" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i> Submit Request
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Appointment Form -->
+        <div class="col-md-6 mb-4">
+            <div class="form-section h-100">
+                <h3 class="mb-4">Book Appointment</h3>
+                <form method="post" action="{% url 'advocates:warrior_detail' warrior.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="appointment" value="1">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Your Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date & Time</label>
+                        <input type="datetime-local" name="date" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Purpose</label>
+                        <textarea name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calendar-check me-2"></i> Book Now
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

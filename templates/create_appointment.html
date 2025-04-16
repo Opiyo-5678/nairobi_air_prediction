@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">Book Appointment with Dr. {{ provider.name }}</h3>
+                </div>
+                
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        {% if not user.is_authenticated %}
+                        <div class="form-group">
+                            <label for="client_name">Full Name</label>
+                            <input type="text" class="form-control" id="client_name" name="client_name"
+                                   value="{{ request.POST.client_name }}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="client_email">Email Address</label>
+                            <input type="email" class="form-control" id="client_email" name="client_email"
+                                   value="{{ request.POST.client_email }}" required>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-group">
+                            <label for="date_time">Appointment Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="date_time" name="date_time"
+                                   value="{{ request.POST.date_time }}" min="{{ min_datetime }}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reason">Reason for Appointment</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3">{{ request.POST.reason }}</textarea>
+                            <small class="form-text text-muted">Optional: Describe the purpose of your visit</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'health_provider_page' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-calendar-check"></i> Book Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-info-circle"></i> Appointment fee: KSh 1000
+                        (Payable after booking confirmation)
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set minimum datetime to current time
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    document.getElementById('date_time').min = `${year}-${month}-${day}T${hours}:${minutes}`;
+});
+</script>
+{% endblock %}

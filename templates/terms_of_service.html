@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<style>
+    .terms-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .terms-container h1 {
+        color: #2c3e50;
+        border-bottom: 2px solid #e74c3c;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .terms-container h2 {
+        color: #e74c3c;
+        margin-top: 2rem;
+    }
+    
+    .highlight {
+        background-color: #fffde7;
+        padding: 1rem;
+        border-left: 4px solid #ffc107;
+        margin: 1rem 0;
+    }
+</style>
+
+<div class="terms-container">
+    <h1>Terms of Service</h1>
+    <p><strong>Effective Date:</strong> January 2025</p>
+    
+    <div class="highlight">
+        <p>By using our Air Quality Prediction service, you agree to these terms. Please read them carefully.</p>
+    </div>
+    
+    <h2>1. Service Description</h2>
+    <p>We provide air quality predictions and health recommendations based on environmental data analysis. Our service includes:</p>
+    <ul>
+        <li>Real-time air quality monitoring</li>
+        <li>48-hour pollution forecasts</li>
+        <li>Personalized health recommendations</li>
+    </ul>
+    
+    <h2>2. User Responsibilities</h2>
+    <p>You agree to:</p>
+    <ul>
+        <li>Use our service for personal, non-commercial purposes</li>
+        <li>Not attempt to reverse-engineer our systems</li>
+        <li>Consult healthcare professionals for medical advice</li>
+    </ul>
+    
+    <h2>3. Limitations</h2>
+    <p>Our predictions are estimates based on available data:</p>
+    <ul>
+        <li>Not a substitute for official air quality measurements</li>
+        <li>Accuracy may vary by location</li>
+        <li>Always follow local health advisories</li>
+    </ul>
+    
+    <h2>4. Account Termination</h2>
+    <p>We may suspend accounts for:</p>
+    <ul>
+        <li>Violating these terms</li>
+        <li>Abusing our services</li>
+        <li>Harmful or illegal activities</li>
+    </ul>
+    
+    <a href="{% url 'index' %}" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Home
+    </a>
+</div>
+{% endblock %}

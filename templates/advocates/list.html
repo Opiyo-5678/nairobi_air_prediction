@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Air Quality Advocates{% endblock %}
+
+{% block extra_css %}
+<style>
+    .advocate-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #2c786c;
+    }
+    .advocate-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .availability-badge {
+        font-size: 0.8rem;
+    }
+    .hero-advocates {
+        background: linear-gradient(rgba(0, 68, 69, 0.8), rgba(0, 68, 69, 0.9)), 
+                    url('{% static "images/air-advocates-bg.jpg" %}');
+        background-size: cover;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-advocates py-5 mb-4">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold">Air Quality Advocates</h1>
+        <p class="lead">Connect with experts for consultation and advice</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        {% for warrior in warriors %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card advocate-card h-100">
+                {% if warrior.profile_picture %}
+                <img src="{{ warrior.profile_picture.url }}" class="card-img-top" alt="{{ warrior.name }}" style="height: 250px; object-fit: cover;">
+                {% else %}
+                <div class="text-center py-5 bg-light">
+                    <i class="fas fa-user-tie fa-5x text-muted"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h3 class="card-title">{{ warrior.name }}</h3>
+                    <p class="text-primary">{{ warrior.expertise }}</p>
+                    <p class="card-text">{{ warrior.bio|truncatewords:20 }}</p>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-clock text-muted me-2"></i>
+                        <span class="badge bg-light text-dark availability-badge">
+                            {{ warrior.availability }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" 
+                                data-bs-target="#consultModal{{ warrior.id }}">
+                            <i class="fas fa-question-circle me-2"></i>Request Consultation
+                        </button>
+                        <a href="{% url 'book_appointment' warrior.id %}" class="btn btn-primary">
+                            <i class="fas fa-calendar-check me-2"></i>Book Appointment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consultation Modal for each advocate -->
+        <div class="modal fade" id="consultModal{{ warrior.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Request Consultation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="post" action="{% url 'request_consultation' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="warrior_id" value="{{ warrior.id }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Your Name</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Your Issue</label>
+                                <textarea name="issue" class="form-control" rows="4" required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Donation CTA Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light border-0">
+                <div class="card-body text-center py-4">
+                    <h3 class="mb-3">Support Our Advocates</h3>
+                    <p class="lead mb-4">Your donation helps us continue this important work</p>
+                    <a href="{% url 'advocates:initiate_donation' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-donate me-2"></i>Make a Donation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

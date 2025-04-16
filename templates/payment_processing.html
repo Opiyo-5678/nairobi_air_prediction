@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Payment - Health Services</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --dark-color: #2c3e50;
+            --light-color: #f8f9fa;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .payment-container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            animation: fadeIn 0.6s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .payment-header {
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+        }
+        
+        .payment-header h2 {
+            color: var(--dark-color);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-header p {
+            color: #7f8c8d;
+            margin-bottom: 0;
+        }
+        
+        .payment-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .service-summary {
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .service-summary h5 {
+            color: var(--dark-color);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .service-summary h5 i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid #dfe6e9;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .input-group-text {
+            background-color: #ecf0f1;
+            border-radius: 10px 0 0 10px;
+        }
+        
+        .btn-pay {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 14px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 10px;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-pay:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-pay:active {
+            transform: translateY(0);
+        }
+        
+        .payment-processing {
+            display: none;
+            text-align: center;
+            padding: 1rem 0;
+        }
+        
+        .payment-spinner {
+            border: 5px solid rgba(52, 152, 219, 0.1);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            animation: spin 1.5s linear infinite;
+            margin: 2rem auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-message {
+            margin-bottom: 1.5rem;
+        }
+        
+        .countdown {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 1rem;
+        }
+        
+        .manual-confirm {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px dashed #ddd;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 576px) {
+            .payment-container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+        }
+        
+        /* Animation for success state */
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .success-animation {
+            animation: bounceIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <!-- Payment Form (initially visible) -->
+        <div id="paymentForm">
+            <div class="payment-header">
+                <div class="payment-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <h2>Complete Your Payment</h2>
+                <p>Enter your M-Pesa details to receive payment request</p>
+            </div>
+
+            <div class="service-summary">
+                <h5><i class="fas fa-info-circle"></i> Service Details</h5>
+                <p><strong>Service:</strong> {{ payment_for|title }} with {{ provider.name }}</p>
+                <p><strong>Reference:</strong> {{ request.session.payment_session.reference|default:"HEALTH-XXXXXX" }}</p>
+                <p><strong>Amount:</strong> KSh {{ amount|default:"1" }}</p>
+            </div>
+
+            <form id="mpesaPaymentForm">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="phoneNumber" class="form-label">M-Pesa Phone Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                        <input type="tel" class="form-control" id="phoneNumber" 
+                               placeholder="254712345678 or 0712345678" required>
+                    </div>
+                    <small class="text-muted">Enter your M-Pesa registered number (format: 254712345678 or 0712345678)</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount (KES)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">KSh</span>
+                        <input type="number" class="form-control" id="amount" 
+                               value="{{ amount|default:'1' }}" min="1" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-pay" id="payButton">
+                    <i class="fas fa-paper-plane"></i> Send Payment Request
+                </button>
+            </form>
+        </div>
+
+        <!-- Payment Processing (hidden initially) -->
+        <div class="payment-processing" id="paymentProcessing">
+            <div class="payment-header">
+                <div class="payment-icon">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <h2>Processing Payment</h2>
+                <p>Please check your phone for M-Pesa prompt</p>
+            </div>
+            
+            <div class="payment-spinner"></div>
+            
+            <div class="status-message alert alert-info" id="statusMessage">
+                <p><i class="fas fa-mobile-alt"></i> Payment request sent to your phone</p>
+                <p id="paymentDetails" class="mb-2"></p>
+                <div class="countdown">Checking status in <span id="timer">5</span> seconds</div>
+            </div>
+            
+            <div class="alert alert-danger" id="errorMessage" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
+            </div>
+            
+            <div class="manual-confirm" id="manualConfirm" style="display: none;">
+                <p class="text-muted">Didn't receive the request?</p>
+                <button id="confirmManually" class="btn btn-outline-primary">
+                    <i class="fas fa-keyboard"></i> Confirm Payment Manually
+                </button>
+            </div>
+            
+            <button id="retryButton" class="btn btn-outline-primary mt-3" style="display: none;">
+                <i class="fas fa-sync-alt"></i> Try Again
+            </button>
+        </div>
+
+        <!-- Manual Confirmation Modal -->
+        <div class="modal fade" id="manualConfirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Payment Manually</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>If you've already paid but didn't receive confirmation, please enter your M-Pesa transaction ID below:</p>
+                        <form id="manualConfirmForm">
+                            <div class="mb-3">
+                                <label for="transactionId" class="form-label">Transaction ID</label>
+                                <input type="text" class="form-control" id="transactionId" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="submitManualConfirm">Confirm Payment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let retryCount = 0;
+        const maxRetries = 3;
+        const checkDelay = 5000; // 5 seconds
+        let paymentCheckInterval;
+        let manualConfirmModal = null;
+
+        // Initialize modal when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            manualConfirmModal = new bootstrap.Modal(document.getElementById('manualConfirmModal'));
+            
+            // Set payment details in processing view
+            const amount = document.getElementById('amount').value;
+            const phone = document.getElementById('phoneNumber').value;
+            document.getElementById('paymentDetails').innerHTML = `
+                <p><strong>Amount:</strong> KES ${amount}</p>
+                <p><strong>Phone:</strong> ${phone}</p>
+            `;
+        });
+
+        // Function to start countdown timer
+        function startCountdown(seconds, callback) {
+            let timeLeft = seconds;
+            document.getElementById('timer').textContent = timeLeft;
+            
+            const countdownInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    if (callback) callback();
+                }
+            }, 1000);
+        }
+
+        // Helper function to get cookies (for CSRF)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // When submitting the form
+        document.getElementById('mpesaPaymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const amount = document.getElementById('amount').value;
+            
+            // Validate phone number
+            if (!phoneNumber.match(/^(254|0)[0-9]{9}$/)) {
+                showError('Please enter a valid phone number (e.g., 254712345678 or 0712345678)');
+                return;
+            }
+            
+            // Validate amount
+            if (parseFloat(amount) <= 0) {
+                showError('Please enter a valid amount greater than 0');
+                return;
+            }
+            
+            // Show processing UI
+            switchToProcessingView();
+            
+            try {
+                // Get CSRF token
+                const csrftoken = getCookie('csrftoken');
+                
+                // Send payment request
+                const response = await fetch('{% url "make_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({
+                        phone_number: phoneNumber,
+                        amount: amount,
+                        payment_for: '{{ payment_for }}'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Start checking status
+                    startPaymentStatusCheck();
+                } else {
+                    // Show error
+                    showError(data.message || 'Failed to send payment request');
+                    showRetryOption();
+                }
+            } catch (error) {
+                // Show error for exceptions
+                showError('Network error. Please check your connection and try again.');
+                showRetryOption();
+            }
+        });
+        
+        // Function to check payment status
+        async function checkPaymentStatus() {
+            try {
+                const response = await fetch('{% url "check_payment_status" %}', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Payment completed - redirect
+                    showSuccess(data.message);
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 2000);
+                } else if (retryCount < maxRetries) {
+                    // Payment still pending
+                    retryCount++;
+                    updateStatusMessage(data.message || 'Waiting for payment confirmation...', retryCount);
+                    startCountdown(checkDelay/1000, checkPaymentStatus);
+                } else {
+                    // Final failure
+                    showError(data.message || 'No payment confirmation received. You can try again or confirm manually.');
+                    showManualConfirmOption();
+                    showRetryOption();
+                }
+            } catch (error) {
+                // Handle errors
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    startCountdown(checkDelay/1000, checkPaymentStatus);
+                } else {
+                    showError('Connection error. Please try again or confirm manually.');
+                    showManualConfirmOption();
+                    showRetryOption();
+                }
+            }
+        }
+        
+        // Function to start payment status check
+        function startPaymentStatusCheck() {
+            retryCount = 0;
+            startCountdown(5, checkPaymentStatus);
+        }
+        
+        // Function to switch to processing view
+        function switchToProcessingView() {
+            document.getElementById('paymentForm').style.display = 'none';
+            document.getElementById('paymentProcessing').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('retryButton').style.display = 'none';
+            document.getElementById('manualConfirm').style.display = 'none';
+        }
+        
+        // Function to update status message
+        function updateStatusMessage(message, attempt) {
+            document.getElementById('statusMessage').innerHTML = `
+                <p><i class="fas fa-mobile-alt"></i> ${message}</p>
+                ${attempt ? `<p>Attempt ${attempt} of ${maxRetries}</p>` : ''}
+                <div class="countdown">Next check in <span id="timer">${checkDelay/1000}</span> seconds</div>
+            `;
+        }
+        
+        // Function to show success state
+        function showSuccess(message) {
+            document.querySelector('.payment-spinner').style.display = 'none';
+            document.getElementById('statusMessage').innerHTML = `
+                <div class="alert alert-success success-animation">
+                    <i class="fas fa-check-circle"></i> <strong>Payment Successful!</strong>
+                    <p>${message}</p>
+                    <p>You will be redirected shortly...</p>
+                </div>
+            `;
+        }
+        
+        // Function to show error
+        function showError(message) {
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorText').textContent = message;
+            document.querySelector('.payment-spinner').style.display = 'none';
+        }
+        
+        // Function to show retry option
+        function showRetryOption() {
+            document.getElementById('retryButton').style.display = 'block';
+        }
+        
+        // Function to show manual confirm option
+        function showManualConfirmOption() {
+            document.getElementById('manualConfirm').style.display = 'block';
+        }
+        
+        // Retry payment button event
+        document.getElementById('retryButton').addEventListener('click', function() {
+            window.location.reload();
+        });
+        
+        // Manual confirm button event
+        document.getElementById('confirmManually').addEventListener('click', function() {
+            manualConfirmModal.show();
+        });
+        
+        // Submit manual confirmation
+        document.getElementById('submitManualConfirm').addEventListener('click', async function() {
+            const transactionId = document.getElementById('transactionId').value.trim();
+            
+            if (!transactionId) {
+                alert('Please enter your transaction ID');
+                return;
+            }
+            
+            manualConfirmModal.hide();
+            document.getElementById('statusMessage').innerHTML = `
+                <p><i class="fas fa-spinner fa-spin"></i> Verifying your payment...</p>
+            `;
+            
+            try {
+                const response = await fetch('{% url "confirm_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `transaction_id=${encodeURIComponent(transactionId)}`
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showSuccess('Payment verified successfully!');
+                        setTimeout(() => {
+                            window.location.href = data.redirect_url || '{% url "health_provider_page" %}';
+                        }, 2000);
+                    } else {
+                        showError(data.message || 'Failed to verify payment');
+                    }
+                } else {
+                    showError('Error verifying payment. Please try again.');
+                }
+            } catch (error) {
+                showError('Network error while verifying payment');
+            }
+        });
+    </script>
+</body>
+</html>

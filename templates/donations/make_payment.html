@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Support Clean Air Initiatives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .donation-hero {
+        background: linear-gradient(rgba(0, 68, 69, 0.8), rgba(0, 68, 69, 0.9)), 
+                    url('{% static "images/air-quality-bg.jpg" %}');
+        background-size: cover;
+        color: white;
+        padding: 4rem 0;
+        margin-bottom: 2rem;
+    }
+    .donation-card {
+        border-left: 4px solid #2c786c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="donation-hero text-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold">Make a Difference</h1>
+        <p class="lead">Your donation helps us fight air pollution</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card donation-card">
+                <div class="card-header bg-white">
+                    <h3 class="mb-0"><i class="fas fa-donate me-2"></i>Donate via M-Pesa</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="donationForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Amount (KES)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">KES</span>
+                                <input type="number" name="amount" class="form-control" 
+                                       min="10" step="10" required>
+                            </div>
+                            <small class="text-muted">Minimum donation: KES 10</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">M-Pesa Phone Number</label>
+                            <input type="tel" name="phone_number" class="form-control" 
+                                   pattern="^254\d{9}$" 
+                                   placeholder="2547XXXXXXXX" required>
+                            <small class="text-muted">Format: 2547XXXXXXXX</small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-mobile-alt me-2"></i> Initiate Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <div class="d-inline-flex align-items-center text-muted">
+                    <i class="fas fa-lock fa-lg me-2"></i>
+                    <span>Secure M-Pesa payment processing</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Format phone number input
+    const phoneInput = document.querySelector('input[name="phone_number"]');
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.startsWith('0')) {
+            value = '254' + value.substring(1);
+        } else if (value.startsWith('7')) {
+            value = '254' + value;
+        }
+        e.target.value = value;
+    });
+    
+    // Form validation
+    const form = document.getElementById('donationForm');
+    form.addEventListener('submit', function(e) {
+        const amount = parseFloat(form.amount.value);
+        if (amount < 10) {
+            alert('Minimum donation is KES 10');
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

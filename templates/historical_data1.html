@@ -1,0 +1,127 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historical Air Quality Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        canvas {
+            max-width: 800px;
+            margin: 20px auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Historical Air Quality Data</h1>
+    <canvas id="airQualityChart"></canvas>
+
+    <script>
+        // Function to get color based on AQI
+        function getColorForAQI(aqi) {
+            if (aqi <= 50) return 'green';      // Good
+            if (aqi <= 100) return 'yellow';    // Moderate
+            if (aqi <= 150) return 'orange';    // Unhealthy for Sensitive Groups
+            if (aqi <= 200) return 'red';       // Unhealthy
+            if (aqi <= 300) return 'purple';   // Very Unhealthy
+            return 'maroon';                   // Hazardous
+        }
+
+        function loadChart() {
+            Papa.parse("{% static 'air_quality_data.csv' %}", {
+                download: true,
+                header: false,  // No headers in the CSV file
+                dynamicTyping: true,
+                complete: function(results) {
+                    console.log("CSV Data:", results);  // Debug: Log the parsed CSV data
+        
+                    const data = results.data;
+                    console.log("Parsed Data:", data);  // Debug: Log the parsed data
+        
+                    // Extract timestamps, AQI, and PM2.5 values by index
+                    const timestamps = data.map(entry => entry[0]);  // First column: Timestamp
+                    const aqiValues = data.map(entry => entry[1]);   // Second column: AQI
+                    const pm25Values = data.map(entry => entry[2]);  // Third column: PM2.5
+        
+                    console.log("Timestamps:", timestamps);  // Debug: Log timestamps
+                    console.log("AQI Values:", aqiValues);   // Debug: Log AQI values
+                    console.log("PM2.5 Values:", pm25Values);  // Debug: Log PM2.5 values
+        
+                    // Get the chart canvas context
+                    const ctx = document.getElementById('airQualityChart').getContext('2d');
+        
+                    // Check if the chart already exists
+                    if (window.airQualityChart instanceof Chart) {
+                        // Destroy the existing chart
+                        window.airQualityChart.destroy();
+                    }
+        
+                    // Create a new chart
+                    window.airQualityChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: timestamps,
+                            datasets: [
+                                {
+                                    label: 'AQI',
+                                    data: aqiValues,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    backgroundColor: aqiValues.map(aqi => getColorForAQI(aqi)),
+                                    fill: false,
+                                },
+                                {
+                                    label: 'PM2.5',
+                                    data: pm25Values,
+                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                    fill: false,
+                                }
+                            ]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Value'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                error: function(error) {
+                    console.error("Error loading CSV file:", error);  // Debug: Log any errors
+                }
+            });
+        }
+        
+        // Load chart initially
+        loadChart();
+        
+        // Reload chart data every 5 minutes
+        setInterval(loadChart, 300000);
+    </script>
+</body>
+</html>

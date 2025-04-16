@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Providers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #fff;
+            margin: 10px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007BFF;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #555;
+            margin: 5px 0;
+        }
+        h3 {
+            margin-top: 20px;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        textarea, input[type="datetime-local"], input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Ensures padding doesn't add to width */
+            margin-bottom: 10px;
+        }
+        button {
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .provider-title {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: center;
+        }
+        .price-tag {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .provider-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 2px solid #007BFF;
+        }
+        .user-email-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #dee2e6;
+        }
+        .payment-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .request-btn {
+            background-color: #007BFF;
+        }
+        .pay-now-btn {
+            background-color: #28a745;
+        }
+        /* Keep confirmation styles for potential use with payment or future AJAX */
+        .confirmation-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            /* display: none; /* Hide by default if only used by AJAX */
+        }
+        .payment-section {
+            border-top: 1px solid #eee;
+            margin-top: 15px;
+            padding-top: 15px;
+           /* display: none; /* Hide by default */
+        }
+        /* Django messages styling */
+        .alert {
+            padding: 15px; /* More padding */
+            margin-bottom: 20px; /* More space */
+            border: 1px solid transparent;
+            border-radius: 4px;
+            font-size: 16px; /* Slightly larger font */
+        }
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .alert-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+         .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+        .small-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="provider-title">Health Providers</div>
+
+    <!-- Display Django Messages -->
+    {% if messages %}
+    <div class="messages" style="max-width: 800px; margin: 0 auto 20px auto;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <ul>
+        {% for provider in health_providers %}
+        <li>
+            <div class="provider-header">
+                {% if provider.profile_pic %}
+                    <img src="{{ provider.profile_pic.url }}" alt="{{ provider.name }}" class="profile-pic">
+                {% else %}
+                    <!-- Placeholder for profile pic -->
+                    <div class="profile-pic" style="background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 24px; color: #007BFF;">{{ provider.name|slice:":1" }}</span>
+                    </div>
+                {% endif %}
+                <div>
+                    <h2>{{ provider.name }}</h2>
+                    <p><strong>Specialization:</strong> {{ provider.specialization }}</p>
+                    <p><strong>Email:</strong> {{ provider.email }}</p>
+                    <p><strong>Contact:</strong> {{ provider.contact_info }}</p>
+                </div>
+            </div>
+
+            <p><strong>Bio:</strong> {{ provider.bio }}</p>
+
+            <!-- User Email Section - Still needed to populate hidden field -->
+            <div class="user-email-section">
+                <label for="user-email-{{ provider.id }}">Your Email Address:</label>
+                <input type="email" id="user-email-{{ provider.id }}"
+                       class="user-email-input"
+                       value="{{ request.user.email|default:'' }}"
+                       required>
+                <p class="small-text">We'll send confirmation to this email.</p>
+            </div>
+
+            <!-- Consultation Request Section -->
+            <h3>Request Consultation <span class="price-tag">KSh 1</span></h3>
+            <!-- Ensure action URL is correct -->
+            <form id="consult-form-{{ provider.id }}" class="service-form" action="{% url 'create_consultation' provider.id %}" method="post">
+                {% csrf_token %}
+                <!-- Hidden email field will be populated by JavaScript before submit -->
+                <input type="hidden" name="user_email" class="hidden-email">
+
+                <label for="issue-{{ provider.id }}">Describe your issue:</label>
+                <textarea id="issue-{{ provider.id }}" name="issue" rows="4" required></textarea>
+
+                <div class="payment-options">
+                    <!-- 'action' helps the view decide if payment is next -->
+                    <button type="submit" name="action" value="request_only" class="request-btn">Request Consultation</button>
+                    <button type="submit" name="action" value="pay_now" class="pay-now-btn">Request & Pay Now</button>
+                </div>
+            </form>
+
+            <!-- Confirmation/Payment section - Kept for potential future use or if payment forms remain AJAX -->
+            <!-- These will NOT be shown by the service-form submission anymore -->
+             <div id="consult-confirm-{{ provider.id }}" class="confirmation-message" style="display: none;"> <!-- Hide explicitly -->
+                <p>✅ Your consultation request has been received! Check your email for confirmation.</p>
+                <div class="payment-section" style="display: none;"> <!-- Hide explicitly -->
+                    <h4>Complete Payment Now</h4>
+                     <!-- Payment form might still use AJAX or submit normally -->
+                    <form class="payment-form" action="#" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="service_type" value="consultation">
+                        <input type="hidden" name="service_id" value=""> <!-- This would need population if used -->
+                        <label for="phone-consult-{{ provider.id }}">M-Pesa Phone Number (254XXXXXXXXX):</label>
+                        <input type="text" id="phone-consult-{{ provider.id }}" name="phone"
+                               pattern="254[0-9]{9}" title="Format: 254XXXXXXXXX" required>
+                        <button type="submit" class="pay-now-btn">Pay via M-Pesa</button>
+                    </form>
+                </div>
+            </div>
+
+
+            <!-- Appointment Request Section -->
+            <h3>Book Appointment <span class="price-tag">KSh 1</span></h3>
+            <!-- Ensure action URL is correct -->
+            <form id="appoint-form-{{ provider.id }}" class="service-form" action="{% url 'create_appointment' provider.id %}" method="post">
+                {% csrf_token %}
+                <!-- Hidden email field will be populated by JavaScript before submit -->
+                <input type="hidden" name="user_email" class="hidden-email">
+
+                <label for="date-{{ provider.id }}">Date and Time:</label>
+                <input type="datetime-local" id="date-{{ provider.id }}" name="date_time" required>
+
+                <label for="reason-{{ provider.id }}">Reason:</label>
+                <textarea id="reason-{{ provider.id }}" name="reason" rows="4"></textarea>
+
+                <div class="payment-options">
+                    <!-- 'action' helps the view decide if payment is next -->
+                    <button type="submit" name="action" value="request_only" class="request-btn">Book Appointment</button>
+                    <button type="submit" name="action" value="pay_now" class="pay-now-btn">Book & Pay Now</button>
+                </div>
+            </form>
+
+            <!-- Confirmation/Payment section - Kept for potential future use or if payment forms remain AJAX -->
+            <!-- These will NOT be shown by the service-form submission anymore -->
+            <div id="appoint-confirm-{{ provider.id }}" class="confirmation-message" style="display: none;"> <!-- Hide explicitly -->
+                <p>✅ Your appointment request has been received! Check your email for confirmation.</p>
+                <div class="payment-section" style="display: none;"> <!-- Hide explicitly -->
+                    <h4>Complete Payment Now</h4>
+                    <!-- Payment form might still use AJAX or submit normally -->
+                    <form class="payment-form" action="#" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="service_type" value="appointment">
+                        <input type="hidden" name="service_id" value=""> <!-- This would need population if used -->
+                        <label for="phone-appoint-{{ provider.id }}">M-Pesa Phone Number (254XXXXXXXXX):</label>
+                        <input type="text" id="phone-appoint-{{ provider.id }}" name="phone"
+                               pattern="254[0-9]{9}" title="Format: 254XXXXXXXXX" required>
+                        <button type="submit" class="pay-now-btn">Pay via M-Pesa</button>
+                    </form>
+                </div>
+            </div>
+
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- MODIFIED SCRIPT SECTION -->
+    <script>
+    // --- Setup email handling ---
+    // Updates the hidden email field whenever the visible one changes
+    document.querySelectorAll('.service-form').forEach(form => {
+        const emailInput = form.closest('li').querySelector('.user-email-input');
+        const hiddenEmail = form.querySelector('.hidden-email');
+
+        if (emailInput && hiddenEmail) {
+            // Update on input change
+            emailInput.addEventListener('input', () => {
+                hiddenEmail.value = emailInput.value;
+            });
+
+            // Initialize on page load
+            hiddenEmail.value = emailInput.value;
+        }
+    });
+
+    // --- Ensure email is copied just before standard form submission ---
+    // This runs right before the browser sends the form data
+    document.querySelectorAll('.service-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            // We DO NOT call e.preventDefault() here.
+            // Ensure the hidden email field has the latest value from the visible input.
+            const emailInput = this.closest('li').querySelector('.user-email-input');
+            const hiddenEmail = this.querySelector('.hidden-email');
+            if (emailInput && hiddenEmail) {
+                 hiddenEmail.value = emailInput.value;
+                 // Add a check for empty email if it's absolutely required
+                 if (!emailInput.value.trim()) {
+                     alert('Please enter your email address.');
+                     e.preventDefault(); // Prevent submission if email is empty
+                     emailInput.focus(); // Focus the email input
+                     return;
+                 }
+            }
+            // The form will now submit normally via the browser's default behavior.
+        });
+    });
+
+
+    // --- Optional: Payment Form AJAX Handling ---
+    // Decide if you want the M-Pesa payment forms to use AJAX or submit normally.
+    // If you want them to submit normally (redirecting to payment processing page),
+    // then KEEP THIS BLOCK COMMENTED OUT or REMOVE it.
+    // If you want them to work via AJAX (like initiate payment and maybe show a spinner),
+    // then UNCOMMENT this block and ensure your payment views return appropriate JSON.
+    /*
+    document.querySelectorAll('.payment-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Prevent default ONLY for payment forms if using AJAX
+            const form = this;
+            // Add some visual feedback like disabling the button
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+
+            try {
+                // Action URL should be set correctly, e.g., /pay/consultation/123/
+                if (!form.action || form.action.endsWith('#')) {
+                     throw new Error("Payment form action URL not set.");
+                }
+
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest' // Let backend know it's AJAX
+                    }
+                });
+
+                const result = await response.json(); // Expect JSON response
+
+                if (response.ok && result.success) {
+                    // Redirect to payment processing page or show success message
+                    // Example: Redirect based on JSON response
+                     if (result.redirect_url) {
+                        window.location.href = result.redirect_url;
+                    } else {
+                        alert(result.message || 'Payment initiated. Check your phone.');
+                        // Maybe hide form and show a message here
+                    }
+                } else {
+                    // Handle backend error or failed payment initiation
+                    alert('Payment Error: ' + (result.message || 'Failed to initiate payment. Please check details and try again.'));
+                }
+            } catch (error) {
+                console.error("Payment form submission error:", error);
+                alert('Network error or issue initiating payment. Please try again.');
+            } finally {
+                 // Re-enable button
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            }
+        });
+    });
+    */
+
+    </script>
+</body>
+</html>
